@@ -1,0 +1,36 @@
+#!/system/bin/sh
+bb=/system/xbin/busybox || /system/bin/busybox;
+sdext=/sd-ext; # mtdblock new mountpoint
+internal=`$bb mountpoint -n /data | awk '{print $1}'`; # it should be /dev/block/mtdblock
+extblock=/dev/block/mmcblk0p2;
+log=/data/int2ext.log;
+sdcache=/sys/devices/virtual/bdi/179\:0/read_ahead_kb;
+
+if [ ! -d $sdext ]; then
+  $bb mount -o rw,remount /;
+  $bb mkdir $sdext;
+  $bb mount -o ro,remount /;
+else
+  $bb umount $sdext;
+fi;
+$bb umount /data;
+$bb mount $internal $sdext; # MTD internal storage on /sd-ext
+$bb mount -o noatime,nodiratime,nosuid,nodev $extblock /data; # EXTx on /data as new internal storage (used by system), /data is empty
+$bb chown system:system /data;
+$bb chmod 771 /data;
+$bb $sdext/* /data; # moved to new internal, /sd-ext become empty
+for i in misc property radio; do
+  if [ ! -d $sdext/$i ]; then
+    $bb mkdir $sdext/$i;
+  fi;
+  $bb /data/$i/* $sdext/$i;
+  if [ ! -d /data/$i ]; then
+    $bb mkdir /data/$i;
+  fi;
+  $bb mount -o bind $sdext/$i /data/$i;
+done;
+for j in data dalvik-cache; do
+  if [ ! -d $sdext/$i ]; then
+    $bb mkdir $sdext/$i;
+  fi;
+done;

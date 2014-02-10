@@ -14,39 +14,40 @@ logger() {
   fi;
   echo `date +"%d-%m-%Y %T"`" "$1;
   echo `date +"%d-%m-%Y %T"`" "$1 >> $log;
-  echo "" >> $log;
 }
 
 if [ -e $sdcache ]; then
-  echo 3072 > $sdcache;
+  echo 2048 > $sdcache;
 fi;
 
 if [ ! -e $extblock ]; then
-  logger "E/External partition block not found.";
+  logger "E/ "$extblock" block not found.";
   exit;
 fi;
 if [ ! -d $sdext ]; then
-  logger "D/Creating external mount point.";
+  logger "D/Creating external mount point on "$sdext;
   $bb mount -o rw,remount /;
   $bb mkdir $sdext;
   $bb mount -o ro,remount /;
 else
   $bb umount $sdext;
 fi;
-logger "D/Moving internal data mount point.";
+logger "D/Mounting "$internal" --> "$sdext;
 $bb umount /data;
 $bb mount $internal $sdext;
+logger "D/Mounting "$extblock" --> /data";
 $bb mount -o noatime,nodiratime,nosuid,nodev $extblock /data;
 $bb chown system:system /data;
 $bb chmod 771 /data;
-logger "D/Moving to external data";
+logger "D/Moving from "$sdext" --> /data";
 $bb mv $sdext/* /data;
 
-for h in misc radio property radio; do
+# move back 
+for h in dalvik-cache misc radio property; do
   if [ ! -d $sdext/$h ]; then
     $bb mkdir $sdext/$h;
   fi;
-  logger "D/Moving "/data/$h" to "$sdext/$h;
+  logger "D/Moving back "/data/$h" to "$sdext/$h;
   if [ -d /data/$h ]; then
     $bb mv /data/$h/* $sdext/$h;
   fi;
@@ -55,25 +56,6 @@ for h in misc radio property radio; do
   fi;
   $bb mount -o bind $sdext/$h /data/$h;
 done;
-
-if [ -d /data/data ]; then
-  for i in `$bb ls /data/data/`; do
-    # list data that required by system on internal
-    if [[ `$bb ls -l /data/data/ | grep $i | awk '{print $3}'`=='system' ]]; then
-      # if it user owned, move to internal
-      if [ ! -d $sdext/data ]; then
-        $bb mkdir $sdext/data;
-      fi;
-      logger "D/Moving system required data /data/data/"$i" to internal.";
-      $bb mv /data/data/$i $sdext/data;
-    fi;
-    logger "D/Sym-linking app data to internal.";
-    if [ [ ! -e $sdext/data/$i ] && [ ! -h $sdext/data/$i ] ]; then
-      $bb ln -s /data/data/$i $sdext/data/$i;
-    fi;
-  done;
-  #$bb mount -o bind $sdext/data /data/data;
-fi;
 
 $bb umount $sdext;
 $bb sync;
