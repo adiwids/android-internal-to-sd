@@ -1,4 +1,7 @@
 #!/system/bin/sh
+## CronMod INT2EXT+ by croniccorey[at]xda-developers.com rewriten script
+## All credits are belongs to croniccorey
+
 bb=/system/xbin/busybox || /system/bin/busybox;
 sdext=/sd-ext;
 internal=`$bb mountpoint -n /data | awk '{print $1}'`;
@@ -42,8 +45,8 @@ $bb chmod 771 /data;
 logger "D/Moving from "$sdext" --> /data";
 $bb mv $sdext/* /data;
 
-# move back 
-for h in dalvik-cache misc radio property; do
+# move back for fixing radio signal error (wifi, mobile, IMEI bugs)
+for h in data misc radio property; do
   if [ ! -d $sdext/$h ]; then
     $bb mkdir $sdext/$h;
   fi;
