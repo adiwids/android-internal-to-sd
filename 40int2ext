@@ -60,18 +60,21 @@ for h in misc radio property; do
   $bb mount -o bind $sdext/$h /data/$h;
 done;
 
-# move back & sym-linked dalvik-cache to maintain performance (adapted from D2EXT)
-if [ -d /data/dalvik-cache ]; then
-  if [ ! -d $sdext/dalvik-cache ]; then
-    $bb mkdir $sdext/dalvik-cache;
+if [ -d /data/data ]; then
+  if [ ! -d $sdext/data ]; then
+    $bb mkdir $sdext/data;
   fi;
-  for i in `$bb ls /data/dalvik-cache`; do
-    logger "D/Moving /data/dalvik-cache/"$i" --> "$sdext/dalvik-cache;
-    $bb mv /data/dalvik-cache/$i $sdext/dalvik-cache;
-    logger "D/Sym-linking "$sdext"/dalvik-cache/"$i" --> /data/dalvik-cache/"$i;
-    $bb ln -sf $sdext/dalvik-cache/$i /data/dalvik-cache/$i;
+  for i in `$bb ls /data/data`; do
+    owner=`$bb ls -l /data/data | grep $i | awk '{print $3}'`;
+    if [ $owner == 'system' ]; then
+      logger "D/Move system owned /data/data/"$i" --> "$sdext"/data/"$i;
+      $bb mv /data/data/$i $sdext/data;
+      # sym-link rather than bind whole /data/data
+      if [ ! -h /data/data/$i ]; then
+        $bb ln -sf $sdext/data/$i /data/data/$i;
+      fi;
+    fi;
   done;
 fi;
 
-$bb umount $sdext;
 $bb sync;
