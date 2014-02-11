@@ -68,12 +68,9 @@ if [ -d /data/dalvik-cache ]; then
   for i in `$bb ls /data/dalvik-cache`; do
     logger "D/Moving /data/dalvik-cache/"$i" --> "$sdext/dalvik-cache;
     $bb mv /data/dalvik-cache/$i $sdext/dalvik-cache;
+    logger "D/Sym-linking "$sdext"/dalvik-cache/"$i" --> /data/dalvik-cache/"$i;
+    $bb ln -sf $sdext/dalvik-cache/$i /data/dalvik-cache/$i;
   done;
-  logger "D/Binding "$sdext"/dalvik-cache --> /data/dalvik-cache";
-  if [ ! -d /data/dalvik-cache ]; then
-    $bb mkdir /data/dalvik-cache;
-  fi;
-  $bb mount -o bind $sdext/dalvik-cache /data/dalvik-cache;
 fi;
 
 $bb umount $sdext;
