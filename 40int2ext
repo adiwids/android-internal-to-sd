@@ -46,7 +46,7 @@ logger "D/Moving from "$sdext" --> /data";
 $bb mv $sdext/* /data;
 
 # move back for fixing radio signal error (wifi, mobile, IMEI bugs)
-for h in data misc radio property; do
+for h in misc radio property; do
   if [ ! -d $sdext/$h ]; then
     $bb mkdir $sdext/$h;
   fi;
@@ -59,6 +59,22 @@ for h in data misc radio property; do
   fi;
   $bb mount -o bind $sdext/$h /data/$h;
 done;
+
+# move back & sym-linked dalvik-cache to maintain performance (adapted from D2EXT)
+if [ -d /data/dalvik-cache ]; then
+  if [ ! -d $sdext/dalvik-cache ]; then
+    $bb mkdir $sdext/dalvik-cache;
+  fi;
+  for i in `$bb ls /data/dalvik-cache`; do
+    logger "D/Moving /data/dalvik-cache/"$i" --> "$sdext/dalvik-cache;
+    $bb mv /data/dalvik-cache/$i $sdext/dalvik-cache;
+  done;
+  logger "D/Binding "$sdext"/dalvik-cache --> /data/dalvik-cache";
+  if [ ! -d /data/dalvik-cache ]; then
+    $bb mkdir /data/dalvik-cache;
+  fi;
+  $bb mount -o bind $sdext/dalvik-cache /data/dalvik-cache;
+fi;
 
 $bb umount $sdext;
 $bb sync;
